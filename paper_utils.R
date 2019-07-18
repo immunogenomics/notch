@@ -16,11 +16,17 @@ suppressMessages({
 library(Rcpp)
 library(RcppArmadillo)
 
+
+fig.size <- function (height, width) {
+    options(repr.plot.height = height, repr.plot.width = width)
+}
+
+
 ## our libraries
 library(reticulate)
 library(ggrastr)
 do_scatter <- function(umap_use, meta_data, label_name, no_guides = TRUE, do_labels = TRUE, nice_names, palette_use,
-                       pt_size = 4, point_size = .5, base_size = 16, do_points = TRUE, do_density = FALSE, h = 6, w = 8) {
+                       pt_size = 4, point_size = .5, base_size = 12, do_points = TRUE, do_density = FALSE, h = 6, w = 8) {
     plt_df <- umap_use %>% data.frame() %>% 
         cbind(meta_data) %>% 
         dplyr::sample_frac(1L) 
@@ -54,10 +60,14 @@ do_scatter <- function(umap_use, meta_data, label_name, no_guides = TRUE, do_lab
     if (no_guides)
         plt <- plt + guides(col = FALSE, fill = FALSE, alpha = FALSE)
     
-    if (do_labels) 
-        plt <- plt + geom_label_repel(data = data.table(plt_df)[, .(X1 = mean(X1), X2 = mean(X2)), by = label_name], label.size = NA,
-                                      aes_string(label = label_name), color = "white", size = pt_size, alpha = 1, segment.size = 0) + 
+    if (do_labels) {
+        plt <- plt + geom_text_repel(
+            data = data.table(plt_df)[, .(X1 = mean(X1), X2 = mean(X2)), by = label_name], 
+            label.size = NA, aes_string(label = label_name), 
+            color = "black", size = pt_size, alpha = 1, segment.size = 0) + 
         guides(col = FALSE, fill = FALSE)
+        
+    }
     return(plt)
 }
 
@@ -134,7 +144,7 @@ library(ggthemes)
 plotFeatures <- function(data_mat, dim_df, features, nrow = 1, 
                          qlo = 0.05, qhi = 1, order_by_expression = FALSE, 
                          pt_shape = 16, pt_size = .5, no_guide = FALSE,
-                         .xlim = c(NA, NA), .ylim = c(NA, NA)) {
+                         .xlim = c(NA, NA), .ylim = c(NA, NA), color_high = muted("blue")) {
     plt_df <- data.frame(dim_df[, 1:2])
     colnames(plt_df) <- c("X1", "X2")
 
@@ -153,7 +163,7 @@ plotFeatures <- function(data_mat, dim_df, features, nrow = 1,
             ggplot(aes(X1, X2, color = value)) + 
             geom_point_rast(dpi = 300, width = 6, height = 4, size = .5, shape = pt_shape) + 
 #             geom_point(shape = ".") + 
-            scale_color_gradient2(na.value = "lightgrey", mid = "lightgrey", midpoint = 0, high = muted("blue")) + 
+            scale_color_gradient2(na.value = "lightgrey", mid = "lightgrey", midpoint = 0, high = color_high) + 
             theme_tufte(base_size = 14, base_family = "Helvetica") + 
             theme(panel.background = element_rect(), plot.title = element_text(hjust = .5)) +
             labs(x = "UMAP 1", y = "UMAP 2", title = feature) + 
@@ -261,4 +271,3 @@ column_to_rownames <- function(df, colname) {
     df[[colname]] <- NULL
     return(df)
 }                           
-}
