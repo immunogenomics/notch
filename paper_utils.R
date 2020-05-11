@@ -226,8 +226,8 @@ MinMax <- function (data, min, max) {
     return(data2)
 }
 
-sourceCpp("/data/srlab/ik936/fast_wilcox.cpp")
-source("/data/srlab/ik936/Foxxy/utils/fast_wilcox.R")
+# sourceCpp("/data/srlab/ik936/fast_wilcox.cpp")
+# source("/data/srlab/ik936/Foxxy/utils/fast_wilcox.R")
 
 ## for sumGroups
 sumOverRowNames <- function(X) {
@@ -240,7 +240,7 @@ sumOverRowNames <- function(X) {
 
 read10x <- function(run, suffix) {
     barcode.loc <- file.path(run, "barcodes.tsv")
-    gene.loc <- file.path(run, "genes.tsv")
+    gene.loc <- file.path(run, "genes.tsv|features.tsv")
     matrix.loc <- file.path(run, "matrix.mtx")
 
     data <- readMM(file = matrix.loc) %>% as("dgCMatrix")
@@ -271,3 +271,18 @@ column_to_rownames <- function(df, colname) {
     df[[colname]] <- NULL
     return(df)
 }                           
+
+                           
+## l2 normalize columns
+l2_normalize <- function(X) {
+    X <- as.matrix(X)
+    X %*% diag(1 / sqrt(colSums(X * X)))
+}
+                           
+cosine_kernel <- function(X, Y, sigma=0.1) {
+    Xnorm <- l2_normalize(X)
+    Ynorm <- l2_normalize(Y)
+    cosine_distance <- 2 * (1 - crossprod(Xnorm, Ynorm))
+    cosine_kernel <- exp(-cosine_distance / sigma)
+    return(cosine_kernel)
+}
